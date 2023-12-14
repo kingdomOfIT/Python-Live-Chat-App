@@ -1,5 +1,8 @@
 class Person:
-    def __init__(self, addr, name, client):
+    """
+    Represents a person, holds name, socket cloent and IP address 
+    """
+    def __init__(self, addr, client):
         self.addr = addr
         self.name = None
         self.client = client
