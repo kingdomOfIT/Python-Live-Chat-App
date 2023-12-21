@@ -30,24 +30,26 @@ def client_communication(person):
     Thread to handle all mesages from client
     """
     client = person.client
-    #get persons name
+    
+    # first message received is always persones name
     name = client.recv(BUFSIZ).decode("utf8")
     person.set_name(name)
-    msg = bytes(f"{name} has joined the chat!", "utf8")
-    broadcast(msg, "") #broadcast welcome message
     
-    while True:
+    msg = bytes(f"{name} has joined the chat!", "utf8")
+    broadcast(msg, "") # broadcast welcome message
+    
+    while True: # wait for any messages from person
         try:
             msg = client.recv(BUFSIZ)
             print(f"{name}: ", msg.decode("utf8"))
-            if msg == bytes("{quit}", "utf8"):
+            if msg == bytes("{quit}", "utf8"): # if message is quit disconect client
                 client.send(bytes("{quit}", "utf8"))
                 client.close()
                 persons.remove(person)
-                broadcast(f"{name} has left the chat...", "Unknown user")
+                broadcast(bytes(f"{name} has left the chat...", "utf8"), "")
                 print(f"[DISCONECTED] {name} disconected ")
                 break
-            else: 
+            else: # send message to all clients
                 broadcast(msg, name)
         except Exception as e: 
             print(f"[client_communication exception] {e}")
@@ -57,22 +59,21 @@ def wait_for_connection(SERVER):
     """
     Wait for connection from new clients, start new thread once connected
     """
-    run = True
-    while run:
+    while True:
         try:
-            client, addr = SERVER.accept()
-            person = Person(addr,client)
+            client, addr = SERVER.accept() # wait for any new connections
+            person = Person(addr,client) # create new person for connection
             persons.append(person)
             print(f"[CONNECTION] {addr} connected to the server at {time.time()}")
             Thread(target=client_communication, args=(person,)).start()
         except Exception as e: 
             print(" wait_for_connection Failure: ", e)
-            run = False
+            break
             
     print("Server crashed")
 
 if __name__ == "__main__":
-    SERVER.listen(5)
+    SERVER.listen(MAX_CONNECTIONS) # open server to listen for connections
     print("Waiting for connections...")
     ACCEPT_THREAD = Thread(target=wait_for_connection, args=(SERVER,))
     ACCEPT_THREAD.start()
